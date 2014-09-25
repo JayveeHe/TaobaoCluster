@@ -9,7 +9,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="ansj_seg-2.0.6" level="project" />
     <orderEntry type="library" name="org.json" level="project" />
-    <orderEntry type="library" name="TaobaoCrawler" level="project" />
     <orderEntry type="library" name="nlp-lang-0.3" level="project" />
     <orderEntry type="library" name="ansj_seg-2.0.6-min" level="project" />
     <orderEntry type="library" name="jsoup-1.7.3" level="project" />

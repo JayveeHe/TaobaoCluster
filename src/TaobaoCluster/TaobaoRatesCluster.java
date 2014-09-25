@@ -6,7 +6,7 @@ import Utils.TrieTree;
 import Utils.WordNode;
 import org.ansj.domain.Term;
 import org.ansj.recognition.NatureRecognition;
-import org.ansj.splitWord.analysis.ToAnalysis;
+import org.ansj.splitWord.analysis.NlpAnalysis;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -14,7 +14,6 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.*;
 
-import static Spider.RateSpider.*;
 
 /**
  * Created by ITTC-Jayvee on 2014/9/16.
@@ -47,16 +46,12 @@ public class TaobaoRatesCluster {
      * @param iterNum    聚类最大迭代次数
      * @param KeywordNum 最后显示的每一类的关键词个数
      */
-    public String processRates(String URL, int maxPage, int DNum, int ClusterNum, int iterNum, int KeywordNum, IDFCaculator idfCaculator) throws JSONException {
+    public String processRates(String URL, int maxPage, int DNum, int ClusterNum, int iterNum, int KeywordNum, IDFCaculator idfCaculator) throws IOException, JSONException {
 //        int TNum = 400;//特征向量的维数
         //获取商品评价列表（JSON形式）
         JSONObject root = null;
         RateSpider spider = new RateSpider();
-        try {
-            root = spider.getRateByURL(URL, maxPage);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        root = spider.getRateByURL(URL, maxPage);
         //计算各评价文本的TFIDF排行
         TrieTree AllWordTree = new TrieTree();//用于存储该商品评价列表中出现的所有词汇
         JSONArray rateList = root.optJSONArray("rateList");
@@ -65,18 +60,14 @@ public class TaobaoRatesCluster {
             ArrayList<DocData> docList = new ArrayList<DocData>();
             for (int i = 0; i < rateList.length(); i++) {
                 JSONObject rate = null;
-                try {
-                    rate = (JSONObject) rateList.get(i);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+                rate = (JSONObject) rateList.get(i);
                 String content = null;
 //                if (null != rate) {
                 content = rate.optString("content");
 //                }
                 //对每个content的内容进行分词统计
                 TrieTree wordsTree = new TrieTree();
-                List<Term> terms = ToAnalysis.parse(content);
+                List<Term> terms = NlpAnalysis.parse(content);
                 new NatureRecognition(terms).recognition();
                 for (Term term : terms) {
                     String natureStr = term.getNatureStr();
@@ -142,7 +133,7 @@ public class TaobaoRatesCluster {
                 IKMeansCalculable[] ikMeansCalculables = clusterResult[kk];
                 for (int ii = 0; ii < ikMeansCalculables.length; ii++) {
                     IKMeansCalculable kmd = ikMeansCalculables[ii];
-                    List<Term> terms = ToAnalysis.parse((String) kmd.getObj());
+                    List<Term> terms = NlpAnalysis.parse((String) kmd.getObj());
                     new NatureRecognition(terms).recognition();
                     for (Term term : terms) {
                         wordTree.addWord(term.getName(), term.getNatureStr());
@@ -202,7 +193,7 @@ public class TaobaoRatesCluster {
         while (i < keywordNum && j < word_list.size()) {
             WordNode wordNode = word_list.get(j);
             String natureStr = wordNode.getNature();
-            if ("n".equals(natureStr) || "a".equals(natureStr) || "b".equals(natureStr) || "v".equals(natureStr)) {
+            if ("n".equals(natureStr) || "nw".equals(natureStr) || "a".equals(natureStr) || "b".equals(natureStr) || "vn".equals(natureStr)) {
                 if (wordNode.getWord().length() > 1) {
                     keywords[i] = wordNode.getWord();
                     i++;

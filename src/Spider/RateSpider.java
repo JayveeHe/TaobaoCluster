@@ -1,6 +1,7 @@
 package Spider;
 
 import Spider.RateSpiderExceptions.SpiderJsonException;
+import Spider.RateSpiderExceptions.SpiderTimeoutException;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -98,7 +99,7 @@ public class RateSpider {
                 continue;
             }
             time = System.currentTimeMillis() - time;
-            long sleepTime = (long) (Math.random() * 1000);
+            long sleepTime = (long) (Math.random() * 500);
             System.out.println("用时：" + time + "ms\t休眠" + sleepTime + "ms");
             try {
                 Thread.sleep(sleepTime);
@@ -147,7 +148,7 @@ public class RateSpider {
      * @param pageNum      所指定的页数
      * @return 返回包含所有评价子项的JSONArray
      */
-    public JSONArray getRateList(String auctionNumId, String userNumId, int pageNum) throws SpiderJsonException {
+    public JSONArray getRateList(String auctionNumId, String userNumId, int pageNum) throws SpiderJsonException, SpiderTimeoutException {
         //开始进行商品评价的读取
         String rateURL = "http://rate.taobao.com/feedRateList.htm";
         Map<String, String> data = new HashMap<String, String>();
@@ -176,6 +177,9 @@ public class RateSpider {
                     doc = Jsoup.connect(rateURL).header("User-Agent",
                             "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2")
                             .data(data).timeout(5000).get();
+
+                } catch (SocketTimeoutException ste3) {
+                    throw new SpiderTimeoutException("评价列表读取超时，请检查网络！");
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (IOException e) {

@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="TaobaoCrawler1">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../../Git/TaobaoCrawler/bin/TaobaoCrawler_jar/TaobaoCrawler.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>
