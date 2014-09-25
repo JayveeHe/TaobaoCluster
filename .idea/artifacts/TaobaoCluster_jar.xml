@@ -1,0 +1,13 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="TaobaoCluster:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/TaobaoCluster_jar</output-path>
+    <root id="archive" name="TaobaoCluster.jar">
+      <element id="module-output" name="TaobaoCluster" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/nlp-lang-0.3.jar" path-in-jar="/" />
+      <element id="file-copy" path="$PROJECT_DIR$/data/IDF值.txt" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/ansj_seg-2.0.6-min.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../../../Git/TaobaoCrawler/libs/jsoup-1.7.3.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../../../Git/TaobaoCrawler/libs/org.json.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

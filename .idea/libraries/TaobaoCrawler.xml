@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="TaobaoCrawler">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/libs/TaobaoCrawler.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/libs/TaobaoCrawler.jar!/" />
+    </SOURCES>
+  </library>
+</component>
