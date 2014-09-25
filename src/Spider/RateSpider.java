@@ -1,6 +1,7 @@
 package Spider;
 
 import Spider.RateSpiderExceptions.SpiderJsonException;
+import Spider.RateSpiderExceptions.SpiderParseException;
 import Spider.RateSpiderExceptions.SpiderTimeoutException;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -28,7 +29,7 @@ public class RateSpider {
      * @param maxPage 爬取的最大页数，如果为0则无上限
      * @throws java.io.IOException
      */
-    public JSONObject getRateByURL(String URL, int maxPage) throws IOException {
+    public JSONObject getRateByURL(String URL, int maxPage) throws SpiderTimeoutException, SpiderParseException {
         //首先分析所给的URL，获取其中的商品ID
         String itemID = null;
         Matcher m = Pattern.compile("id=\\d{5,}").matcher(URL);
@@ -43,11 +44,15 @@ public class RateSpider {
         //首先读取整个商品页面，获取其中的sellerID
         String sellerID = null;
         System.out.println("正在读取商品页面，获取相关信息……");
-        Document itemDoc;
+        Document itemDoc = null;
         try {
             itemDoc = Jsoup.connect(URL).timeout(5000).get();
-        } catch (SocketTimeoutException ste1) {
-            itemDoc = Jsoup.connect(URL).timeout(5000).get();
+        } catch (IOException ste1) {
+            try {
+                itemDoc = Jsoup.connect(URL).timeout(5000).get();
+            } catch (IOException e) {
+                throw new SpiderTimeoutException("商品页面读取超时");
+            }
         }
         String itemHTML = itemDoc.html();
         m = Pattern.compile("sellerId:\"\\d{1,}").matcher(itemHTML);
@@ -57,7 +62,8 @@ public class RateSpider {
             System.out.println("sellerId读取错误！");
 //            System.exit(-1);
             //TODO 注意退出条件
-            return null;
+//            return null;
+            throw new SpiderParseException("sellerId读取错误");
         }
         String itemName = itemDoc.select("title").text().replaceAll("(-淘宝网)|(\\s)|-tmall.com天猫|/|、", "");
         System.out.println(itemName);

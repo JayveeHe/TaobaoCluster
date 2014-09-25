@@ -1,6 +1,8 @@
 package TaobaoCluster;
 
 import Spider.RateSpider;
+import Spider.RateSpiderExceptions.SpiderParseException;
+import Spider.RateSpiderExceptions.SpiderTimeoutException;
 import Utils.IDFCaculator;
 import Utils.TrieTree;
 import Utils.WordNode;
@@ -46,7 +48,7 @@ public class TaobaoRatesCluster {
      * @param iterNum    聚类最大迭代次数
      * @param KeywordNum 最后显示的每一类的关键词个数
      */
-    public String processRates(String URL, int maxPage, int DNum, int ClusterNum, int iterNum, int KeywordNum, IDFCaculator idfCaculator) throws IOException, JSONException {
+    public String processRates(String URL, int maxPage, int DNum, int ClusterNum, int iterNum, int KeywordNum, IDFCaculator idfCaculator) throws SpiderTimeoutException, SpiderParseException, JSONException {
 //        int TNum = 400;//特征向量的维数
         //获取商品评价列表（JSON形式）
         JSONObject root = null;
@@ -60,7 +62,11 @@ public class TaobaoRatesCluster {
             ArrayList<DocData> docList = new ArrayList<DocData>();
             for (int i = 0; i < rateList.length(); i++) {
                 JSONObject rate = null;
-                rate = (JSONObject) rateList.get(i);
+                try {
+                    rate = (JSONObject) rateList.get(i);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
                 String content = null;
 //                if (null != rate) {
                 content = rate.optString("content");

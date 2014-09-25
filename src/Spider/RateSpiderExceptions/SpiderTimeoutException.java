@@ -5,10 +5,10 @@ import java.io.IOException;
 /**
  * Created by Jayvee on 2014/9/24.
  */
-public class SpiderParserException extends IOException {
+public class SpiderTimeoutException extends IOException {
     private String msg;
 
-    public SpiderParserException(String msg) {
+    public SpiderTimeoutException(String msg) {
         this.msg = msg;
     }
 
