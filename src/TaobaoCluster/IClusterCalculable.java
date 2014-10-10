@@ -1,11 +1,12 @@
 package TaobaoCluster;
 
+import java.util.Comparator;
 import java.util.Objects;
 
 /**
  * Created by Jayvee on 2014/9/18.
  */
-public interface IKMeansCalculable<D> {
+public interface IClusterCalculable<D> {
     /**
      * 获取待计算的向量值
      *
@@ -41,4 +42,5 @@ public interface IKMeansCalculable<D> {
 //    public void setObj(D obj);
 
     public D getObj();
+
 }
