@@ -1,8 +1,5 @@
 package TaobaoCluster;
 
-import java.lang.invoke.VolatileCallSite;
-import java.nio.channels.ClosedSelectorException;
-import java.security.interfaces.RSAKey;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -22,18 +19,19 @@ public class APCluster {
     private double pk;
     private float lam;
     private int iterNum;
+    private float coePK;
 
     public static void main(String[] a) {
-        ArrayList<testData> list = new ArrayList<testData>();
+//        ArrayList<testData> list = new ArrayList<testData>();
         float[] tt = new float[]{
                 (float) 1.2, (float) 2.0
         };
 
-        testData t = new testData(tt, 1, 0);
+//        testData t = new testData(tt, 1, 0);
     }
 
 
-    public APCluster(IClusterCalculable[] oriDatas, int iterNum, float lam) {
+    public APCluster(IClusterCalculable[] oriDatas, int iterNum, float lam, float coePK) {
         this.oriDatas = oriDatas;
         this.dNum = oriDatas.length;
         this.Amatrix = new double[dNum][dNum];//all zero
@@ -41,6 +39,7 @@ public class APCluster {
         this.Tmatrix = new int[dNum];
         this.iterNum = iterNum;
         this.lam = lam;
+        this.coePK = coePK;
     }
 
     public IClusterCalculable[][] startCluster() {
@@ -51,14 +50,16 @@ public class APCluster {
     private double[][] getSimilarMatrix(IClusterCalculable[] oriData) {
         double[][] S = new double[dNum][dNum];//相似矩阵
         ArrayList<Double> list_S = new ArrayList<Double>();
+//        double sum = 0;
         for (int i = 0; i < dNum; i++) {
             IClusterCalculable data_i = oriData[i];
             for (int j = 0; j < dNum; j++) {
                 if (i != j) {
                     IClusterCalculable data_j = oriData[j];
-                    //使用欧氏距离还是余弦距离，此处有待斟酌。注意，此处可能应该为负值
-                    S[i][j] = BasicUtils.calCosDist(data_i.getVecValues(), data_j.getVecValues());
+                    //使用欧氏距离还是余弦距离，此处有待斟酌。注意，欧氏距离时，此处应该为负值
+                    S[i][j] = -BasicUtils.calDist(data_i.getVecValues(), data_j.getVecValues());
                     list_S.add(S[i][j]);
+//                    sum += S[i][j];
                 }
 //                else {
                 //P(k)值的选取与聚类数目有关，有待校准
@@ -66,11 +67,14 @@ public class APCluster {
 //                }
             }
         }
+        //pk值的确定，取该点所有对偶点的相似度中值
         Collections.sort(list_S);
         pk = list_S.get((int) (list_S.size() / 2));
+////        pk = sum / list_S.size();
         for (int k = 0; k < dNum; k++) {
-            S[k][k] = pk*2;//preference值的设置
+            S[k][k] = pk * coePK;//preference值的设置
         }
+//        pk = 1f;
         return S;
     }
 
@@ -80,7 +84,7 @@ public class APCluster {
         for (int i = 0; i < dNum; i++) {
             for (int k = 0; k < dNum; k++) {
                 //计算 max{A(i,j)+S(i,j)}
-                double maxAS = 0;
+                double maxAS = -Double.MAX_VALUE;
                 double temp;
                 for (int j = 0; j < dNum; j++) {
                     if (j != k) {
@@ -152,7 +156,7 @@ public class APCluster {
     private int[] identifyCluster(double[][] rmatrix, double[][] amatrix) {
         int[] typeMatrix = new int[dNum];
         for (int i = 0; i < dNum; i++) {
-            double max = Double.MIN_VALUE;
+            double max = -Double.MAX_VALUE;
             for (int k = 0; k < dNum; k++) {
                 double temp = amatrix[i][k] + rmatrix[i][k];
                 if (temp > max) {
@@ -166,9 +170,9 @@ public class APCluster {
 
     protected int[] clusterIter(int iterNum) {
         Smatrix = getSimilarMatrix(oriDatas);
-        int diffNum = 0;
-        int diffCount = 0;
+        int diffCount = 0;//中心点不变化的次数
         for (int i = 0; i < iterNum; i++) {
+            int diffNum = 0;//在一次迭代中中心点变化的个数
             System.out.println("正在进行第" + i + "次迭代");
             //注意，先更新R再更新A
             //TODO 更新时是否需要使用最新的数据，待斟酌

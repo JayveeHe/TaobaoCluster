@@ -27,23 +27,26 @@ public class RateSpider {
      *
      * @param URL
      * @param maxPage 爬取的最大页数，如果为0则无上限
-     * @throws java.io.IOException
+     * @return 如果一切正确，则返回包含rateList的Json对象，否则返回包含errMsg的json对象
+     * @throws org.json.JSONException
      */
-    public JSONObject getRateByURL(String URL, int maxPage) throws SpiderTimeoutException, SpiderParseException {
+    public JSONObject getRateByURL(String URL, int maxPage) throws JSONException {
         //首先分析所给的URL，获取其中的商品ID
         String itemID = null;
         Matcher m = Pattern.compile("id=\\d{5,}").matcher(URL);
         if (m.find()) {
             itemID = m.group().replaceAll("id=", "");
         } else {
-            System.out.println("所给的URL格式不正确，请重新检查！");
+//            System.out.println("所给的URL格式不正确，请重新检查！");
 //            System.exit(-1);
             //TODO 注意退出条件
-            return null;
+            JSONObject errJson = new JSONObject();
+            errJson.put("errMsg", "URL格式错误");
+            return errJson;
         }
         //首先读取整个商品页面，获取其中的sellerID
         String sellerID = null;
-        System.out.println("正在读取商品页面，获取相关信息……");
+//        System.out.println("正在读取商品页面，获取相关信息……");
         Document itemDoc = null;
         try {
             itemDoc = Jsoup.connect(URL).timeout(5000).get();
@@ -51,7 +54,9 @@ public class RateSpider {
             try {
                 itemDoc = Jsoup.connect(URL).timeout(5000).get();
             } catch (IOException e) {
-                throw new SpiderTimeoutException("商品页面读取超时");
+                JSONObject errJson = new JSONObject();
+                errJson.put("errMsg", "商品页面读取超时");
+                return errJson;
             }
         }
         String itemHTML = itemDoc.html();
@@ -59,14 +64,16 @@ public class RateSpider {
         if (m.find()) {
             sellerID = m.group().replaceAll("sellerId:\"", "");
         } else {
-            System.out.println("sellerId读取错误！");
+//            System.out.println("sellerId读取错误！");
 //            System.exit(-1);
             //TODO 注意退出条件
 //            return null;
-            throw new SpiderParseException("sellerId读取错误");
+            JSONObject errJson = new JSONObject();
+            errJson.put("errMsg", "sellerId读取失败，请检查页面");
+            return errJson;
         }
         String itemName = itemDoc.select("title").text().replaceAll("(-淘宝网)|(\\s)|-tmall.com天猫|/|、", "");
-        System.out.println(itemName);
+//        System.out.println(itemName);
 
         //进行正式的评价内容爬取
 //        记录下进行任务时的时间
@@ -85,7 +92,7 @@ public class RateSpider {
         JSONArray commentList = new JSONArray();
         do {
             Long time = System.currentTimeMillis();
-            System.out.println("正在读取第" + pageNum + "页评价");
+//            System.out.println("正在读取第" + pageNum + "页评价");
             JSONArray rateList = null;
             try {
                 rateList = getRateList(itemID, sellerID, pageNum);
@@ -101,12 +108,22 @@ public class RateSpider {
                 } else {
                     pageNum++;
                 }
-                System.out.println("JSON解析失败，跳过该页");
+//                System.out.println("JSON解析失败，跳过该页");
                 continue;
+            } catch (SpiderTimeoutException e) {
+                e.printStackTrace();
+                JSONObject errJson = new JSONObject();
+                errJson.put("errMsg", e.getMsg());
+                return errJson;
+            } catch (SpiderParseException e) {
+                e.printStackTrace();
+                JSONObject errJson = new JSONObject();
+                errJson.put("errMsg", e.getMsg());
+                return errJson;
             }
             time = System.currentTimeMillis() - time;
-            long sleepTime = (long) (Math.random() * 500);
-            System.out.println("用时：" + time + "ms\t休眠" + sleepTime + "ms");
+            long sleepTime = (long) (Math.random() * 300);
+//            System.out.println("用时：" + time + "ms\t休眠" + sleepTime + "ms");
             try {
                 Thread.sleep(sleepTime);
             } catch (InterruptedException e) {
@@ -122,7 +139,7 @@ public class RateSpider {
                     }
                 }
             } else {
-                System.out.println("pageNum=" + pageNum + "\t调用了一个未存在的界面");
+//                System.out.println("pageNum=" + pageNum + "\t调用了一个未存在的界面");
                 hasNextPage = false;
             }
             if (maxPage != 0) {
@@ -139,6 +156,9 @@ public class RateSpider {
             root.put("rateList", commentList);
         } catch (JSONException e) {
             e.printStackTrace();
+            JSONObject errJson = new JSONObject();
+            errJson.put("errMsg", e);
+            return errJson;
         }
 //        FileOutputStream fos = new FileOutputStream(new File(itemName + "-" + System.currentTimeMillis() + ".txt"));
 //        fos.write(root.toString().getBytes("utf-8"));
@@ -154,7 +174,7 @@ public class RateSpider {
      * @param pageNum      所指定的页数
      * @return 返回包含所有评价子项的JSONArray
      */
-    public JSONArray getRateList(String auctionNumId, String userNumId, int pageNum) throws SpiderJsonException, SpiderTimeoutException {
+    public JSONArray getRateList(String auctionNumId, String userNumId, int pageNum) throws SpiderJsonException, SpiderTimeoutException, SpiderParseException {
         //开始进行商品评价的读取
         String rateURL = "http://rate.taobao.com/feedRateList.htm";
         Map<String, String> data = new HashMap<String, String>();
@@ -170,14 +190,14 @@ public class RateSpider {
                     "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2")
                     .data(data).timeout(5000).get();
         } catch (SocketTimeoutException ste1) {
-            System.out.println("连接超时，3秒后进行第一次重连");
+//            System.out.println("连接超时，3秒后进行第一次重连");
             try {
                 Thread.sleep(3000);
                 doc = Jsoup.connect(rateURL).header("User-Agent",
                         "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2")
                         .data(data).timeout(5000).get();
             } catch (SocketTimeoutException ste2) {
-                System.out.println("连接超时，3秒后进行第二次重连");
+//                System.out.println("连接超时，3秒后进行第二次重连");
                 try {
                     Thread.sleep(3000);
                     doc = Jsoup.connect(rateURL).header("User-Agent",
@@ -204,10 +224,11 @@ public class RateSpider {
         if (m.find()) {
             docSTR = m.group();
         } else {
-            System.out.println("匹配json文本失败！");
+//            System.out.println("匹配json文本失败！");
 //            System.exit(-1);
             //TODO 注意退出条件
-            return null;
+            //处理验证码问题
+            throw new SpiderParseException("解析页面失败！可能短期内访问过于频繁！");
         }
 
         JSONTokener jsonTokener = new JSONTokener(docSTR);
@@ -217,8 +238,8 @@ public class RateSpider {
         try {
             rootJSON = (JSONObject) jsonTokener.nextValue();
         } catch (JSONException e) {
-            System.out.println("读取第" + pageNum + "页评价时发生JSON格式错误！");
-            System.out.println(docSTR);
+//            System.out.println("读取第" + pageNum + "页评价时发生JSON格式错误！");
+//            System.out.println(docSTR);
 //            e.printStackTrace();
             //一般是因为content项中存在多余的“”
             //处理json文本中的多余引号
@@ -232,7 +253,7 @@ public class RateSpider {
                     count++;
                 }
                 if (count > 5) {
-                    System.out.println(content);
+//                    System.out.println(content);
                     StringBuffer sb = new StringBuffer();
                     Matcher q = Pattern.compile("\"").matcher(content);
                     for (int i = 0; i < count; i++) {
@@ -242,7 +263,7 @@ public class RateSpider {
                         }
                     }
                     q.appendTail(sb);
-                    System.out.println("最终字符串：" + sb);
+//                    System.out.println("最终字符串：" + sb);
                     content_matcher.appendReplacement(strBuffer, sb.toString());
 //                    content_matcher.appendTail(strBuffer);
 //                    docSTR = strBuffer.toString();
@@ -260,8 +281,8 @@ public class RateSpider {
         }
         commentList = rootJSON.optJSONArray("comments");
         if (null == commentList) {
-            System.out.println(doc.text());
-            System.out.println(rateURL + "?auctionNumId=" + auctionNumId + "&userNumId=" + userNumId + "&currentPageNum=" + pageNum);
+//            System.out.println(doc.text());
+//            System.out.println(rateURL + "?auctionNumId=" + auctionNumId + "&userNumId=" + userNumId + "&currentPageNum=" + pageNum);
         }
         return commentList;
     }

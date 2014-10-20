@@ -25,7 +25,7 @@ public class BasicUtils {
             fenmu2 += vec2[i] * vec2[i];
         }
         double cosDist = fenzi / (Math.sqrt(fenmu1) * Math.sqrt(fenmu2));
-        return cosDist;
+        return cosDist > Double.MAX_VALUE ? 1 : cosDist;
     }
 
     /**
